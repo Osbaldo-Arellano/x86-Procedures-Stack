@@ -13,8 +13,8 @@ TITLE Program Template     (Proj5_arellano.asm)
 
 INCLUDE Irvine32.inc
 
-ARRAYSIZE = 200
-HI = 50
+ARRAYSIZE = 40
+HI = 30
 LO = 15
 
 .data
@@ -25,13 +25,13 @@ description BYTE	"This program generates and displays a list of 200 random numbe
 			BYTE	"The sorted array is then displayed.",13,10 
 			BYTE	"Finally, the program displays the number of instances of each random number.",13,10,13,10,0
 randTitle   BYTE	"Unsorted random numbers:",13,10,0
+medianMssg  BYTE	13,10,13,10,"Median number in the unsorted array: ",0
 
-randNum     DWORD	?
 randArray   DWORD	ARRAYSIZE DUP(?)  
 
 .code
 main PROC
-	call	Randomize 
+	call	Randomize                      ; Generate random seed
 
 	push	OFFSET intro
 	push	OFFSET description
@@ -44,9 +44,10 @@ main PROC
 	push	OFFSET randArray
 	call	displayList
 
-
-
-	Invoke ExitProcess,0	; exit to operating system
+	push	OFFSET randArray
+	push	OFFSET medianMssg
+	call	displayMedian
+	Invoke ExitProcess,0	
 main ENDP	
 
 introduction PROC
@@ -79,9 +80,7 @@ _fillLoop:
 	jmp     _done
 
 _outOfRange: 
-	sub     eax, 15                        ; If current number is greater than HI, subtract LO to keep it in range.  
-	mov     [edi], eax
-	add     edi, 4
+	inc     ecx
 	loop	_fillLoop
 
 _done:
@@ -119,10 +118,64 @@ _printLine:
 	loop	_displayLoop
 
 _done:
-	pop    ebp
-	ret    8
+	pop     ebp
+	ret     8
 displayList ENDP
 
-; (insert additional procedures here)
+sortList PROC
+	push    ebp
+	mov     ebp, esp
+	mov     esi, [ebp + 8]
+
+
+	pop    ebp
+	ret    4
+sortList ENDP
+
+displayMedian PROC
+	push    ebp
+	mov     ebp, esp
+	mov     esi, [ebp + 12]                ; Points to array
+	mov     edx, [ebp + 8]                 ; Points to median message 
+	call	WriteString
+
+; --------------------
+; If array size is odd, then median will be at index [(ARRAYSIZE/2) + 1]
+; --------------------
+	mov     ebx, 2
+	mov     edx, 0
+	mov     eax, ARRAYSIZE
+	div     ebx
+	cmp     edx, 0 
+	je      _isEven
+	mov     eax, [esi+eax*4]
+	call	WriteDec
+	jmp     _done
+
+; --------------------
+; If array size is even, we need to calculate the median as:
+;	[(ARRAYSIZE/2) + ((ARRAYSIZE/2) + 1)] / 2 
+; --------------------
+_isEven:
+	dec     eax
+	mov     ebx, [esi+eax*4]               ; index [(ARRAYSIZE/2)]
+	inc     eax
+	mov     eax, [esi+eax*4]               ; index [(ARRAYSIZE/2) + 1]
+	add     eax, ebx 
+	mov     edx, 0
+	mov     ecx, 2
+	div     ecx                       	   ; Divide (EAX + EBX) by 2 
+	cmp     edx, 0
+	jne      _round
+	call	WriteDec
+	jmp     _done
+
+_round:
+	inc     eax
+	call	WriteDec
+_done:
+	pop    ebp
+	ret    4 
+displayMedian ENDP
 
 END main
