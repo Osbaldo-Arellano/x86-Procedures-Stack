@@ -13,7 +13,7 @@ TITLE Program Template     (Proj5_arellano.asm)
 
 INCLUDE Irvine32.inc
 
-ARRAYSIZE = 40
+ARRAYSIZE = 41	
 HI = 30
 LO = 15
 
@@ -25,7 +25,8 @@ description BYTE	"This program generates and displays a list of 200 random numbe
 			BYTE	"The sorted array is then displayed.",13,10 
 			BYTE	"Finally, the program displays the number of instances of each random number.",13,10,13,10,0
 randTitle   BYTE	"Unsorted random numbers:",13,10,0
-medianMssg  BYTE	13,10,13,10,"Median number in the unsorted array: ",0
+medianMssg  BYTE	13,10,13,10,"The median value of the array: ",0
+goodbye     BYTE	13,10,13,10,"Goodbye, have a great day!",13,10,0
 
 randArray   DWORD	ARRAYSIZE DUP(?)  
 
@@ -47,6 +48,10 @@ main PROC
 	push	OFFSET randArray
 	push	OFFSET medianMssg
 	call	displayMedian
+
+	push	OFFSET goodbye
+	call	farewell
+
 	Invoke ExitProcess,0	
 main ENDP	
 
@@ -100,7 +105,7 @@ displayList PROC
 	mov     ebx, 0                         ; EBX to keep track of how many primes are printed (20 per line)
 	mov     ecx, ARRAYSIZE
 _displayLoop:
-    cmp     ebx, 20
+	cmp     ebx, 20
 	je      _printLine
 	inc     ebx
 	mov     eax, [esi]
@@ -140,7 +145,7 @@ displayMedian PROC
 	call	WriteString
 
 ; --------------------
-; If array size is odd, then median will be at index [(ARRAYSIZE/2) + 1]
+; If array size is odd, then median will be at index [(ARRAYSIZE-1)/2]
 ; --------------------
 	mov     ebx, 2
 	mov     edx, 0
@@ -177,5 +182,15 @@ _done:
 	pop    ebp
 	ret    4 
 displayMedian ENDP
+
+farewell PROC
+	push	ebp
+	mov     ebp, esp
+	mov     edx, [ebp + 8]                ; Points to intoduction message
+	call	WriteString
+
+	pop     ebp
+	ret     4
+farewell ENDP
 
 END main
