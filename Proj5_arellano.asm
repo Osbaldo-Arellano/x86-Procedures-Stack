@@ -164,7 +164,7 @@ _isEven:
 	add     eax, ebx 
 	mov     edx, 0
 	mov     ecx, 2
-	div     ecx                       	   ; Divide (EAX + EBX) by 2 
+	div     ecx                            ; Divide (EAX + EBX) by 2 
 	cmp     edx, 0
 	jne      _round
 	call	WriteDec
