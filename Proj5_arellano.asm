@@ -1,4 +1,4 @@
-TITLE Program Template     (Proj5_arellano.asm)
+TITLE Arrays, Addressing, and Stack-Passed Parameters     (Proj5_arellano.asm)
 
 ; Author: Osbaldo Arellano
 ; Last Modified: 11/14/2022
@@ -13,7 +13,7 @@ TITLE Program Template     (Proj5_arellano.asm)
 
 INCLUDE Irvine32.inc
 
-ARRAYSIZE = 41	
+ARRAYSIZE = 5	
 HI = 30
 LO = 15
 
@@ -52,6 +52,8 @@ main PROC
 	push	OFFSET goodbye
 	call	farewell
 
+	push    OFFSET randArray
+	call    sortList
 	Invoke ExitProcess,0	
 main ENDP	
 
@@ -132,10 +134,68 @@ sortList PROC
 	mov     ebp, esp
 	mov     esi, [ebp + 8]
 
+	mov     ecx, ARRAYSIZE - 1 
+	mov     ebx, 0                          ; Current minium index 
+	mov     edx, 0                          ; loop counter, not the same as ECX loop counter
+_loop:
+	mov     ebx, edx						; EBX = Current minium index 
+	push	ecx                             ; save loop register before _loop2
+	mov     eax, ebx                       
+	mov     ecx, ARRAYSIZE 
+_loop2:
+	add     eax, 4                          ; EAX = (current index + 4), one index above current number since the elements in the list are DWORDS 
+	push    ebx                             ; Save index since register will be modified
+	push    eax                             ; Save index since register will be modified 
+	mov     eax, [esi + eax]
+	mov     ebx, [esi + ebx]
+	cmp     eax, ebx
+	jg      _noIndexChange                           
+	pop     ebx                             ; Value was less than value at current index. update current index.
+	pop     eax
+	jmp     _swap
 
+_noIndexChange:
+	pop     ebx
+	pop     eax
+
+_swap:
+	cmp     ebx, edx                        ; Compare loop counter to current min index. 
+	je      _continue
+	
+	mov     ebx, esi                        ; Points to current min
+	mov     eax, esi                        ; Points to current element in loop iteration
+	add     ebx, 4
+	push    ebx
+	push    eax
+	call	exchangeElements   
+	loop	_loop2
+	pop     ecx                              ; Pop outter loop counter
+	loop	_loop
+	jmp     _done
+
+_continue:
+	loop    _loop2
+	pop    ecx                               ; Pop outter loop counter
+	loop    _loop
+_done:
 	pop    ebp
 	ret    4
 sortList ENDP
+
+exchangeElements PROC
+	push	ebp
+	mov     ebp, esp
+	mov     esi, [ebp + 8]                   ; Points to first element incurrent loop iteration
+	mov     edi, [ebp + 12]                  ; Points to current min element
+
+	mov     edx, [edi]
+	mov     eax, [esi]
+	mov     [esi], edx
+	mov     [edi], eax
+
+	pop     ebp
+	ret     8
+exchangeElements ENDP
 
 displayMedian PROC
 	push    ebp
@@ -186,7 +246,7 @@ displayMedian ENDP
 farewell PROC
 	push	ebp
 	mov     ebp, esp
-	mov     edx, [ebp + 8]                ; Points to intoduction message
+	mov     edx, [ebp + 8]                ; Points to goodbye message
 	call	WriteString
 
 	pop     ebp
