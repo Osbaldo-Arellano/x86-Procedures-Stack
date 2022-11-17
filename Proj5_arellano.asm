@@ -13,7 +13,7 @@ TITLE Arrays, Addressing, and Stack-Passed Parameters     (Proj5_arellano.asm)
 
 INCLUDE Irvine32.inc
 
-ARRAYSIZE = 5	
+ARRAYSIZE = 20
 HI = 30
 LO = 15
 
@@ -28,7 +28,7 @@ randTitle   BYTE	"Unsorted random numbers:",13,10,0
 medianMssg  BYTE	13,10,13,10,"The median value of the array: ",0
 goodbye     BYTE	13,10,13,10,"Goodbye, have a great day!",13,10,0
 
-randArray   DWORD	ARRAYSIZE DUP(?)  
+randArray   DWORD	ARRAYSIZE DUP(?)
 
 .code
 main PROC
@@ -45,15 +45,19 @@ main PROC
 	push	OFFSET randArray
 	call	displayList
 
+	push    OFFSET randArray
+	call    sortList
+
 	push	OFFSET randArray
 	push	OFFSET medianMssg
 	call	displayMedian
+	
+	push	OFFSET randTitle
+	push	OFFSET randArray
+	call    displayList
 
 	push	OFFSET goodbye
 	call	farewell
-
-	push    OFFSET randArray
-	call    sortList
 	Invoke ExitProcess,0	
 main ENDP	
 
@@ -132,53 +136,64 @@ displayList ENDP
 sortList PROC
 	push    ebp
 	mov     ebp, esp
-	mov     esi, [ebp + 8]
+	mov     esi, [ebp + 8]                  ; Points to unsorted array 
 
-	mov     ecx, ARRAYSIZE - 1 
-	mov     ebx, 0                          ; Current minium index 
-	mov     edx, 0                          ; loop counter, not the same as ECX loop counter
+	mov     eax, 0                        ; Keep track of current index
+	mov     ecx, ARRAYSIZE - 1 	
+	mov     edx, 0                      ; Incremented by 1 each time
 _loop:
-	mov     ebx, edx						; EBX = Current minium index 
-	push	ecx                             ; save loop register before _loop2
-	mov     eax, ebx                       
-	mov     ecx, ARRAYSIZE 
+	push    ecx                          ; Restored at the end of _loop2
+	mov     ecx, ARRAYSIZE
+	sub     ecx, edx
+	dec     ecx                           ; Inner loop range: (ARRAYSIZE - edx - 1)
+	cmp     ecx, 0
+	je      _done
 _loop2:
-	add     eax, 4                          ; EAX = (current index + 4), one index above current number since the elements in the list are DWORDS 
-	push    ebx                             ; Save index since register will be modified
+	mov     ebx, eax                          ; EAX = (current index + 4), one index above current number since the elements in the list are DWORDS 
+	add     ebx, 4                        ; Comparing one index above the current index. 
+	push    ebx
 	push    eax                             ; Save index since register will be modified 
 	mov     eax, [esi + eax]
 	mov     ebx, [esi + ebx]
 	cmp     eax, ebx
-	jg      _noIndexChange                           
-	pop     ebx                             ; Value was less than value at current index. update current index.
-	pop     eax
-	jmp     _swap
-
-_noIndexChange:
-	pop     ebx
-	pop     eax
-
-_swap:
-	cmp     ebx, edx                        ; Compare loop counter to current min index. 
-	je      _continue
 	
-	mov     ebx, esi                        ; Points to current min
-	mov     eax, esi                        ; Points to current element in loop iteration
-	add     ebx, 4
-	push    ebx
-	push    eax
+	jl      _continue 
+_swap:
+    pop     eax
+	pop     ebx
+	push    eax                          ; Save index. Neeed it after the procedure call. 
+	add     eax, esi
+	add     ebx, esi 
+	push    edx                     ; Save counter register
+	push    esi                   ; Save pointer to start of array
+	push    ebx                            ; Points to current min
+	push    eax                            ; Points to current element in loop iteration
 	call	exchangeElements   
+	pop     esi
+	pop     edx
+	pop     eax
+	add     eax, 4
 	loop	_loop2
-	pop     ecx                              ; Pop outter loop counter
+	pop     ecx
+	add     edx, 1
+	mov     eax, 0 
 	loop	_loop
 	jmp     _done
 
 _continue:
+	pop     eax
+	pop     ebx
+	add     eax, 4
 	loop    _loop2
-	pop    ecx                               ; Pop outter loop counter
-	loop    _loop
+
+	pop     ecx
+	add     edx,1
+	mov     eax, 0 
+	loop	_loop
+	jmp     _done
+
 _done:
-	pop    ebp
+	pop    ebp    
 	ret    4
 sortList ENDP
 
@@ -239,6 +254,8 @@ _round:
 	inc     eax
 	call	WriteDec
 _done:
+	call CrLf
+	call CrLf
 	pop    ebp
 	ret    4 
 displayMedian ENDP
