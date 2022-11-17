@@ -13,9 +13,9 @@ TITLE Arrays, Addressing, and Stack-Passed Parameters     (Proj5_arellano.asm)
 
 INCLUDE Irvine32.inc
 
-ARRAYSIZE = 20
+ARRAYSIZE = 41
 HI = 30
-LO = 15
+LO = 5
 
 .data
 intro       BYTE	"Generating, Sorting, and Counting Random Numbers. Programmed by Osbaldo Arellano.",13,10,13,10,0
@@ -23,12 +23,15 @@ description BYTE	"This program generates and displays a list of 200 random numbe
 			BYTE	"15 and 50 inclusive. Next, the median number of the random array is displayed.",13,10
 			BYTE	"The program then uses bubble sort to sort the random array in ascending order.",13,10
 			BYTE	"The sorted array is then displayed.",13,10 
-			BYTE	"Finally, the program displays the number of instances of each random number.",13,10,13,10,0
+			BYTE	"Finally, the program displays the number of instances of each random number in the range.",13,10,13,10,0
 randTitle   BYTE	"Unsorted random numbers:",13,10,0
+sortedTitle BYTE    "Sorted random numbers: ",13,10,0
 medianMssg  BYTE	13,10,13,10,"The median value of the array: ",0
+countMssg   BYTE	13,10,13,10,"List of instances of each generated number, starting with the smallest value:",13,10,0
 goodbye     BYTE	13,10,13,10,"Goodbye, have a great day!",13,10,0
 
 randArray   DWORD	ARRAYSIZE DUP(?)
+countArray  DWORD	(HI - LO + 1) DUP(?)       
 
 .code
 main PROC
@@ -41,6 +44,7 @@ main PROC
 	push	OFFSET randArray
 	call	fillArray
 
+	push    LENGTHOF randArray
 	push	OFFSET randTitle
 	push	OFFSET randArray
 	call	displayList
@@ -52,12 +56,23 @@ main PROC
 	push	OFFSET medianMssg
 	call	displayMedian
 	
-	push	OFFSET randTitle
+	push    LENGTHOF randArray
+	push	OFFSET sortedTitle
 	push	OFFSET randArray
+	call    displayList
+
+	push   OFFSET countArray
+	push   OFFSET randArray
+	call   countList
+
+	push    LENGTHOF countArray
+	push	OFFSET countMssg
+	push	OFFSET countArray
 	call    displayList
 
 	push	OFFSET goodbye
 	call	farewell
+
 	Invoke ExitProcess,0	
 main ENDP	
 
@@ -104,12 +119,13 @@ displayList PROC
 	mov     ebp, esp
 	mov     esi, [ebp + 8]                 ; Points to array
 	mov     ebx, [ebp + 12]                ; Points to sorted list or unsorted list message
+	mov     ecx, [ebp + 16]                ; Points to array size 
 
 	mov     edx, ebx
 	call	WriteString
 
 	mov     ebx, 0                         ; EBX to keep track of how many primes are printed (20 per line)
-	mov     ecx, ARRAYSIZE
+	;mov     ecx, ARRAYSIZE
 _displayLoop:
 	cmp     ebx, 20
 	je      _printLine
@@ -130,7 +146,7 @@ _printLine:
 
 _done:
 	pop     ebp
-	ret     8
+	ret     12
 displayList ENDP
 
 sortList PROC
@@ -254,11 +270,40 @@ _round:
 	inc     eax
 	call	WriteDec
 _done:
-	call CrLf
-	call CrLf
-	pop    ebp
-	ret    4 
+	call	CrLf
+	call	CrLf
+	pop     ebp
+	ret     4 
 displayMedian ENDP
+
+countList PROC
+	push    ebp
+	mov     ebp, esp
+	mov     esi, [ebp + 8]                ; Points to randArray 
+	mov     edi, [ebp + 12]               ; Points to countArray
+
+	mov    ecx, ARRAYSIZE
+	mov    eax, LO                        ; Starting number count at LO.
+	mov    ebx, 0                         ; Running count of each number in range [LO, HI]
+_loop:
+	cmp     eax, [esi]                    ; ESI is incremented every iteration to point to next element in sortedArray
+	jne      _newCount
+	inc     ebx
+	add     esi, 4
+	loop	_loop
+	jmp     _done
+
+_newCount: 
+	mov    [edi], ebx 
+	inc    eax
+	add    edi, 4
+	mov    ebx, 0                         ; Reset the running count 
+	jmp  _loop
+
+_done:
+	pop     ebp
+	ret     12
+countList ENDP
 
 farewell PROC
 	push	ebp
