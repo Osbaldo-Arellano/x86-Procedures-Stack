@@ -13,7 +13,7 @@ TITLE Arrays, Addressing, and Stack-Passed Parameters     (Proj5_arellano.asm)
 
 INCLUDE Irvine32.inc
 
-ARRAYSIZE = 41
+ARRAYSIZE = 200
 HI = 30
 LO = 5
 
@@ -125,7 +125,6 @@ displayList PROC
 	call	WriteString
 
 	mov     ebx, 0                         ; EBX to keep track of how many primes are printed (20 per line)
-	;mov     ecx, ARRAYSIZE
 _displayLoop:
 	cmp     ebx, 20
 	je      _printLine
@@ -152,23 +151,23 @@ displayList ENDP
 sortList PROC
 	push    ebp
 	mov     ebp, esp
-	mov     esi, [ebp + 8]                  ; Points to unsorted array 
+	mov     esi, [ebp + 8]                ; Points to unsorted array 
 
 	mov     eax, 0                        ; Keep track of current index
 	mov     ecx, ARRAYSIZE - 1 	
-	mov     edx, 0                      ; Incremented by 1 each time
+	mov     edx, 0                        ; Incremented by 1 each time
 _loop:
-	push    ecx                          ; Restored at the end of _loop2
+	push    ecx                           ; Restored at the end of _loop2
 	mov     ecx, ARRAYSIZE
 	sub     ecx, edx
 	dec     ecx                           ; Inner loop range: (ARRAYSIZE - edx - 1)
 	cmp     ecx, 0
 	je      _done
 _loop2:
-	mov     ebx, eax                          ; EAX = (current index + 4), one index above current number since the elements in the list are DWORDS 
+	mov     ebx, eax                      ; EAX = (current index + 4), one index above current number since the elements in the list are DWORDS 
 	add     ebx, 4                        ; Comparing one index above the current index. 
 	push    ebx
-	push    eax                             ; Save index since register will be modified 
+	push    eax                           ; Save index since register will be modified 
 	mov     eax, [esi + eax]
 	mov     ebx, [esi + ebx]
 	cmp     eax, ebx
@@ -177,13 +176,13 @@ _loop2:
 _swap:
     pop     eax
 	pop     ebx
-	push    eax                          ; Save index. Neeed it after the procedure call. 
+	push    eax                           ; Save index. Neeed it after the procedure call. 
 	add     eax, esi
 	add     ebx, esi 
-	push    edx                     ; Save counter register
-	push    esi                   ; Save pointer to start of array
-	push    ebx                            ; Points to current min
-	push    eax                            ; Points to current element in loop iteration
+	push    edx                           ; Save counter register
+	push    esi                           ; Save pointer to start of array
+	push    ebx                           ; Points to current min
+	push    eax                           ; Points to current element in loop iteration
 	call	exchangeElements   
 	pop     esi
 	pop     edx
@@ -209,8 +208,8 @@ _continue:
 	jmp     _done
 
 _done:
-	pop    ebp    
-	ret    4
+	pop     ebp    
+	ret     4
 sortList ENDP
 
 exchangeElements PROC
@@ -277,17 +276,17 @@ _done:
 displayMedian ENDP
 
 countList PROC
-	push    ebp
-	mov     ebp, esp
-	mov     esi, [ebp + 8]                ; Points to randArray 
-	mov     edi, [ebp + 12]               ; Points to countArray
+	push   ebp
+	mov    ebp, esp
+	mov    esi, [ebp + 8]                ; Points to randArray 
+	mov    edi, [ebp + 12]               ; Points to countArray
 
 	mov    ecx, ARRAYSIZE
 	mov    eax, LO                        ; Starting number count at LO.
 	mov    ebx, 0                         ; Running count of each number in range [LO, HI]
 _loop:
 	cmp     eax, [esi]                    ; ESI is incremented every iteration to point to next element in sortedArray
-	jne      _newCount
+	jne     _newCount
 	inc     ebx
 	add     esi, 4
 	loop	_loop
@@ -298,9 +297,10 @@ _newCount:
 	inc    eax
 	add    edi, 4
 	mov    ebx, 0                         ; Reset the running count 
-	jmp  _loop
+	jmp    _loop
 
 _done:
+	mov    [edi], ebx                     ; Push the last count into the countArray
 	pop     ebp
 	ret     12
 countList ENDP
