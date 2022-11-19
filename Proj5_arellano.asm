@@ -26,7 +26,7 @@ description BYTE	"This program generates and displays a list of 200 random numbe
 			BYTE	"The sorted array is then displayed.",13,10 
 			BYTE	"Finally, the program displays the number of instances of each random number in the range.",13,10,13,10,0
 randTitle   BYTE	"Unsorted random numbers:",13,10,0
-sortedTitle BYTE    "Sorted random numbers: ",13,10,0
+sortedTitle BYTE	"Sorted random numbers: ",13,10,0
 medianMssg  BYTE	13,10,13,10,"The median value of the array: ",0
 countMssg   BYTE	13,10,13,10,"List of instances of each generated number, starting with the smallest value:",13,10,0
 goodbye     BYTE	13,10,13,10,"Goodbye, have a great day!",13,10,0
