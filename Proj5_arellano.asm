@@ -1,7 +1,7 @@
 TITLE Arrays, Addressing, and Stack-Passed Parameters     (Proj5_arellano.asm)
 
 ; Author: Osbaldo Arellano
-; Last Modified: 11/14/2022
+; Last Modified: 11/18/2022
 ; OSU email address: arellano@oregonstate.edu
 ; Course number/section:   CS271 Section 400
 ; Project Number:        5         Due Date: 11/20/22
@@ -9,13 +9,14 @@ TITLE Arrays, Addressing, and Stack-Passed Parameters     (Proj5_arellano.asm)
 ;				[15, 50] inclusive. Next, the median number of the random array is displayed.
 ;				The program then uses bubble sort to sort the random array in ascending order. 
 ;				The sorted array is then displayed. 
-;				Finally, the program displays the number of instances of each random number. 
+;				Finally, the program displays the number of instances of each random number
+;               in the range of [LO...HI].
 
 INCLUDE Irvine32.inc
 
 ARRAYSIZE = 200
-HI = 30
-LO = 5
+HI = 50
+LO = 15
 
 .data
 intro       BYTE	"Generating, Sorting, and Counting Random Numbers. Programmed by Osbaldo Arellano.",13,10,13,10,0
@@ -76,6 +77,17 @@ main PROC
 	Invoke ExitProcess,0	
 main ENDP	
 
+; ---------------------------------------------------------------------------------
+; Name: introduction 
+;
+; Introduces the title of the program, the authors name, and displays 
+; a description of the program. 
+;
+; Receives: Reference to someIntroMessage. 
+;           Reference to someDescriptionMessage. 
+;
+; Returns: None
+; ---------------------------------------------------------------------------------
 introduction PROC
 	push	ebp
 	mov     ebp, esp
@@ -88,6 +100,24 @@ introduction PROC
 	ret     8
 introduction ENDP
 
+; ---------------------------------------------------------------------------------
+; Name: fillArray
+;
+; Calls the Irvine RandomNumber procedure to get a random number in the range
+; of [LO...HI]. Fills array (defined as randArray) with generated random numbers. 
+; Stops when number of elements in the array is of size ARRAYSIZE (constant). 
+; 
+;
+; Preconditions: A DWORD array of length ARRAYSIZE whose elements are uninitialized. 
+;
+;
+; Postconditions: ECX is used as the loop counter. EDI is used to point to the next 
+;                 element in the array. 
+;
+; Receives: Empty array randArray of type DWORD. 
+;
+; Returns: randArray with random numbers in the range of [LO...HI] of length ARRAYSIZE.
+; ---------------------------------------------------------------------------------
 fillArray PROC
 	push	ebp
 	mov     ebp, esp
@@ -105,6 +135,11 @@ _fillLoop:
 	loop	_fillLoop
 	jmp     _done
 
+; ------------------------
+; Is jumped to when a randomly generated
+; number is above HI. ECX is incremented 
+; since we didn't push a number into the array. 
+; ------------------------
 _outOfRange: 
 	inc     ecx
 	loop	_fillLoop
@@ -114,6 +149,23 @@ _done:
 	ret     4
 fillArray ENDP
 
+; ---------------------------------------------------------------------------------
+; Name: displayList 
+;
+; Displays each element in an array. 
+;
+; Preconditions: Array of type DWORD. 
+;
+; Postconditions: Modifies ESI to point to the current element in the array. 
+;                 Modifies EBX to point to the message that displays to the user. 
+;                 Modifies ECX as the loop counter; init to ARRAYSIZE. 
+;
+; Receives: Reference to someArray.
+;           Reference to someTitle.
+;           Length of someArray. 
+;
+; Returns: None
+; ---------------------------------------------------------------------------------
 displayList PROC
 	push	ebp
 	mov     ebp, esp
@@ -148,6 +200,22 @@ _done:
 	ret     12
 displayList ENDP
 
+; ---------------------------------------------------------------------------------
+; Name: sortList
+;
+; Uses bubble sort to sort random elements in an array. 
+;
+; Preconditions: Array whose elements are of type DWORD. 
+;
+; Postconditions: Modifies ESI to point to array. 
+;                 Modifies EAX to keep track of current array index and store array elements.
+;				  Modifies EDX to keep track of loop count starting at 0. 
+;                 Modifies EBX to store array elements for comparisons. 
+;
+; Receives: Reference to someArray.
+;
+; Returns: Sorted array in ascending order. 
+; ---------------------------------------------------------------------------------
 sortList PROC
 	push    ebp
 	mov     ebp, esp
@@ -156,6 +224,14 @@ sortList PROC
 	mov     eax, 0                        ; Keep track of current index
 	mov     ecx, ARRAYSIZE - 1 	
 	mov     edx, 0                        ; Incremented by 1 each time
+
+; --------------------
+; Main loop body that iterates ARRAYSIZE times. 
+; After pushing ECX to the stack, ECX is setup
+; as the new counter for the inner loop. Which
+; equals: 
+;        (old ECX value) - (EDX loop counter) - 1
+; --------------------
 _loop:
 	push    ecx                           ; Restored at the end of _loop2
 	mov     ecx, ARRAYSIZE
@@ -163,18 +239,26 @@ _loop:
 	dec     ecx                           ; Inner loop range: (ARRAYSIZE - edx - 1)
 	cmp     ecx, 0
 	je      _done
-_loop2:
-	mov     ebx, eax                      ; EAX = (current index + 4), one index above current number since the elements in the list are DWORDS 
-	add     ebx, 4                        ; Comparing one index above the current index. 
-	push    ebx
-	push    eax                           ; Save index since register will be modified 
-	mov     eax, [esi + eax]
-	mov     ebx, [esi + ebx]
-	cmp     eax, ebx
-	
-	jl      _continue 
+	_loop2:
+		mov     ebx, eax                      ; EAX = (current index + 4), one index above current number since the elements in the list are DWORDS 
+		add     ebx, 4                        ; Comparing one index above the current index. 
+		push    ebx
+		push    eax                           ; Save index since register will be modified 
+		mov     eax, [esi + eax]
+		mov     ebx, [esi + ebx]
+		cmp     eax, ebx	
+		jl      _continue 
+
+; -------------------------
+; POPs EAX and EBX values, which were 
+; initially array indcies. 
+;
+; Calls the exchangeElements procedure after 
+; pushing registers EAX and EBX that point to 
+; the two elements in the array to be swapped. 
+; -------------------------
 _swap:
-    pop     eax
+	pop     eax
 	pop     ebx
 	push    eax                           ; Save index. Neeed it after the procedure call. 
 	add     eax, esi
@@ -212,10 +296,25 @@ _done:
 	ret     4
 sortList ENDP
 
+; ---------------------------------------------------------------------------------
+; Name: exchangeElements
+;
+; Swaps elements in an array. 
+;
+; Preconditions: Reference to array elements of type DWORD. 
+;
+; Postconditions: Modifies ESI register to point to the new min element. 
+;                 Modifies EDI register to point to the current min element. 
+;
+; Receives: Refrence newMinElement in array
+;           Refrence currentMinElement in array
+;
+; Returns: Array with swapped elements newMin and currentMin
+; ---------------------------------------------------------------------------------
 exchangeElements PROC
 	push	ebp
 	mov     ebp, esp
-	mov     esi, [ebp + 8]                   ; Points to first element incurrent loop iteration
+	mov     esi, [ebp + 8]                   ; Points to new min element 
 	mov     edi, [ebp + 12]                  ; Points to current min element
 
 	mov     edx, [edi]
@@ -227,6 +326,23 @@ exchangeElements PROC
 	ret     8
 exchangeElements ENDP
 
+; ---------------------------------------------------------------------------------
+; Name: displayMedian 
+;
+; Displays the median of the randomly generated number array. 
+;
+; Preconditions: Sorted array in ascending order. 
+;
+; Postconditions: Modifies ESI to point to array.
+;                 Modifies EDX to point to message displayed to the user. 
+;                 Modifies EBX to store 2 and divide ARRAYSIZE to check if ARRAYSIZE is even.
+;                 Modifies ECX to store 2 for divison. 
+;
+; Receives: Reference to sortedArray 
+;           Reference to a message that will be displayed to the user. 
+;
+; Returns: None
+; ---------------------------------------------------------------------------------
 displayMedian PROC
 	push    ebp
 	mov     ebp, esp
@@ -266,7 +382,7 @@ _isEven:
 	jmp     _done
 
 _round:
-	inc     eax
+	inc     eax                    
 	call	WriteDec
 _done:
 	call	CrLf
@@ -275,6 +391,28 @@ _done:
 	ret     4 
 displayMedian ENDP
 
+; ---------------------------------------------------------------------------------
+; Name: countList
+;
+; Fills an array (countArray) with the number of times each value in the range
+; [LO...HI] is detected in the randArray. Count will be zero for elements that 
+; apprear zero times. 
+;
+; Preconditions: countArray of type DWORD.
+;                randArray whose elements are DWORDs. 
+;
+; Postconditions: Modifies ESI to point to randArray.
+;                 Modifies EDI to point to countArray. 
+;                 Modifies ECX to store the loop count. 
+;                 Modifies EBX to to store the total count of each value. 
+;                 Modifies EAX check values in range of [LO...HI]
+;
+; Receives: Reference to randArray
+;           Reference to countArray
+;
+; Returns: countArray whose elements, starting at LO and up to HI, equal the number of times each value in the
+;          range of [LO...HI] was detected in randArray. 
+; ---------------------------------------------------------------------------------
 countList PROC
 	push   ebp
 	mov    ebp, esp
@@ -292,6 +430,13 @@ _loop:
 	loop	_loop
 	jmp     _done
 
+; ---------------------
+; The next element in the array did not 
+; equal the current element. Push the count to
+; the current index in the countArray and increment to 
+; point to the next index in the countArray. Finally, 
+; reset the count and loop back to main loop to check next element. 
+; ---------------------
 _newCount: 
 	mov    [edi], ebx 
 	inc    eax
@@ -305,6 +450,14 @@ _done:
 	ret     12
 countList ENDP
 
+; ---------------------------------------------------------------------------------
+; Name: farewell
+;
+; Displays a goodbye message to the user. 
+;
+; Receives: Reference to goodbye messgae that will be displayed to the user
+
+; ---------------------------------------------------------------------------------
 farewell PROC
 	push	ebp
 	mov     ebp, esp
